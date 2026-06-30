@@ -1,8 +1,7 @@
 package com.dogao.dogao.repository;
 
+import com.dogao.dogao.model.Cliente;
 import org.springframework.data.jpa.repository.JpaRepository;
-import com.dogao.dogao.model.Produto;
 
-public interface ClienteRepository extends JpaRepository<Produto, Long> {
-
+public interface ClienteRepository extends JpaRepository<Cliente, Long> {
 }

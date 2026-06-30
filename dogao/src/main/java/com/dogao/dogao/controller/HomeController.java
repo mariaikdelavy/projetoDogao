@@ -1,13 +1,18 @@
 package com.dogao.dogao.controller;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+@Controller
 public class HomeController {
 
     @GetMapping("/")
     public String home() {
-        return "Sistema Dogão rodando";
+        return "index";
+    }
+
+    @GetMapping("/carrinho")
+    public String carrinho() {
+        return "carrinho";
     }
 }

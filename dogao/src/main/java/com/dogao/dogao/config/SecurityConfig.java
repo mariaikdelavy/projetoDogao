@@ -2,6 +2,7 @@ package com.dogao.dogao.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -10,11 +11,16 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
-            .csrf(csrf -> csrf.disable()) 
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll() 
-            );
+                .requestMatchers("/pedidos/**").permitAll() // criar pedido
+                .requestMatchers("/produtos/**").permitAll()
+                .requestMatchers("/admin/**").authenticated() // futuro admin
+                .anyRequest().authenticated()
+            )
+            .httpBasic(Customizer.withDefaults()); 
 
         return http.build();
     }
