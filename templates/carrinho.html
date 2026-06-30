@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Carrinho</title>
+
+    <link rel="stylesheet"
+        href="/static/css/style.css">
+
+</head>
+
+<body onload="carregarCarrinho()">
+
+    <header class="topo-carrinho">
+
+        <button onclick="voltar()" title="Voltar">
+            ←
+        </button>
+
+        <h2>Meu Carrinho</h2>
+
+    </header>
+
+    <main class="carrinho-container">
+
+        <div id="itensCarrinho"></div>
+
+        <div id="resumoTotal" class="resumo-total" style="display:none;">
+
+            <div class="resumo-linha">
+                <span>Subtotal</span>
+                <span id="subtotal">R$ 0,00</span>
+            </div>
+
+            <div class="resumo-linha total-final">
+                <span>Total</span>
+                <span id="total">R$ 0,00</span>
+            </div>
+
+        </div>
+
+        <div id="formularioSection" style="display:none;">
+
+            <div class="formulario">
+
+                <p class="secao-titulo">Seus dados</p>
+
+                <div class="campo-grupo">
+                    <label>Nome</label>
+                    <input type="text"
+                        id="nome"
+                        placeholder="Seu nome completo">
+                </div>
+
+                <div class="campo-grupo">
+                    <label>Telefone</label>
+                    <input type="tel"
+                        id="telefone"
+                        placeholder="(00) 00000-0000"
+                        maxlength="15"
+                        oninput="mascaraTelefone(this)">
+                    <span class="msg-erro" id="erroTelefone">
+                        Informe um telefone válido.
+                    </span>
+                </div>
+
+                <div class="campo-grupo">
+                    <label>Forma de Pagamento</label>
+                    <select id="formaPagamento">
+                        <option value="PIX">PIX</option>
+                        <option value="DINHEIRO">Dinheiro</option>
+                        <option value="CARTAO">Cartão</option>
+                    </select>
+                </div>
+
+                <div class="campo-grupo">
+                    <label>Tipo de Entrega</label>
+                    <select id="tipoEntrega"
+                        onchange="toggleEndereco(this)">
+                        <option value="RETIRAR">Retirar no estabelecimento</option>
+                        <option value="DELIVERY">Delivery</option>
+                    </select>
+                </div>
+
+                <div class="campo-grupo" id="campoEndereco">
+                    <label>Endereço</label>
+                    <input type="text"
+                        id="endereco"
+                        placeholder="Rua, número, bairro">
+                </div>
+
+                <button class="btn-finalizar"
+                    onclick="finalizarPedido()">
+                    ✅ Finalizar Pedido
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="/static/js/script.js"></script>
+
+</body>
+
+</html>

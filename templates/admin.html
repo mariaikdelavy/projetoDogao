@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Painel Admin</title>
+
+    <link rel="stylesheet"
+        href="/static/css/style.css">
+
+</head>
+
+<body onload="carregarPedidosAdmin()">
+
+    <header class="admin-topo">
+<div class="topo-admin">
+
+    <h1>Painel Administrativo</h1>
+
+    <div class="acoes-admin">
+
+        <button onclick="voltarInicio()">
+            Início
+        </button>
+
+        <button onclick="sairAdmin()">
+            Sair
+        </button>
+
+    </div>
+
+</div>
+    </header>
+
+    <main class="admin-container">
+
+        <section class="novo-produto">
+
+            <h2>Novo Produto</h2>
+
+            <input type="text"
+                id="nomeProduto"
+                placeholder="Nome">
+
+            <input type="text"
+                id="descricaoProduto"
+                placeholder="Descrição">
+
+            <input type="number"
+                id="precoProduto"
+                placeholder="Preço">
+
+            <select id="categoriaProduto">
+
+                <option value="Dogão">
+                    Dogão
+                </option>
+
+                <option value="Xis">
+                    Xis
+                </option>
+
+                <option value="Bebida">
+                    Bebida
+                </option>
+
+            </select>
+
+            <button onclick="cadastrarProduto()">
+
+                Cadastrar Produto
+
+            </button>
+
+        </section>
+
+        <section class="pedidos-admin">
+
+            <h2>Pedidos</h2>
+
+            <div id="listaPedidos"></div>
+
+        </section>
+
+    </main>
+
+    <script src="/static/js/script.js"></script>
+
+</body>
+
+</html>

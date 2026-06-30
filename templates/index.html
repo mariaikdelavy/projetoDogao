@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta http-equiv="X-UA-Compatible"
+        content="IE=edge">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Dogão Nei da XV</title>
+
+    <link rel="stylesheet"
+        href="/static/css/style.css">
+
+    <link rel="icon"
+        href="/static/assets/logo.jpg">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+</head>
+
+<body>
+
+    <header>
+
+        <div class="topo">
+
+            <!-- BOTÃO MENU -->
+            <button class="menu-btn"
+                onclick="menuShow()">
+
+                ☰
+
+            </button>
+            
+            <!-- MENU MOBILE -->
+            <div class="menu-mobile"
+                id="menuMobile">
+
+                <a href="login.html">
+
+                    Login Admin
+
+                </a>
+
+            </div>
+
+            <!-- LOGO -->
+            <img src="/static/assets/logo.jpg"
+                class="logo">
+
+            <h1>Dogão Nei da XV</h1>
+
+            <p>
+
+                Clássico da cidade há 14 anos!
+
+            </p>
+
+            <!-- CARRINHO -->
+            <div class="carrinho-topo"
+                onclick="irCarrinho()">
+
+                <i class="fa-solid fa-cart-shopping"></i>
+
+                <span id="contadorCarrinho">
+
+                    0
+
+                </span>
+
+            </div>
+
+        </div>
+
+        <!-- CATEGORIAS -->
+        <nav class="categorias">
+
+            <button class="ativo"
+
+                onclick="
+                carregarProdutos('Dogão');
+                alterarCategoria(this)
+                ">
+
+                Dogões
+
+            </button>
+
+            <button
+
+                onclick="
+                carregarProdutos('Xis');
+                alterarCategoria(this)
+                ">
+
+                Xis
+
+            </button>
+
+            <button
+
+                onclick="
+                carregarProdutos('Bebida');
+                alterarCategoria(this)
+                ">
+
+                Bebidas
+
+            </button>
+
+        </nav>
+
+    </header>
+
+    <!-- PRODUTOS -->
+    <main>
+
+        <section class="lista-produtos"
+            id="listaProdutos">
+
+        </section>
+
+    </main>
+
+    <!-- JS -->
+    <script src="/static/js/script.js"></script>
+
+    <script>
+
+        carregarProdutos("Dogão");
+
+    </script>
+
+</body>
+
+</html>
