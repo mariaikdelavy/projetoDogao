@@ -515,6 +515,91 @@ header{
 }
 
 /* =========================
+   MODAL DE CONFIRMAÇÃO
+========================= */
+
+.confirm-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.5);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+    animation:confirmFadeIn .15s ease-out;
+}
+
+.confirm-modal{
+    background:white;
+    border-radius:18px;
+    padding:28px;
+    width:90%;
+    max-width:360px;
+    box-shadow:0 12px 40px rgba(0,0,0,.25);
+    animation:confirmPopIn .18s ease-out;
+}
+
+.confirm-modal h3{
+    font-size:17px;
+    font-weight:700;
+    color:#222;
+    margin-bottom:10px;
+}
+
+.confirm-modal p{
+    font-size:14px;
+    color:#666;
+    line-height:1.5;
+    margin-bottom:22px;
+}
+
+.confirm-acoes{
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+}
+
+.confirm-acoes button{
+    border:none;
+    border-radius:11px;
+    padding:11px 18px;
+    font-size:13.5px;
+    font-weight:700;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.confirm-cancelar{
+    background:#f2f2f2;
+    color:#555;
+}
+
+.confirm-cancelar:hover{
+    background:#e6e6e6;
+}
+
+.confirm-ok{
+    background:#d91f26;
+    color:white;
+}
+
+.confirm-ok:hover{
+    background:#c0392b;
+    transform:translateY(-1px);
+    box-shadow:0 6px 20px rgba(217,31,38,.25);
+}
+
+@keyframes confirmFadeIn{
+    from{ opacity:0; }
+    to{ opacity:1; }
+}
+
+@keyframes confirmPopIn{
+    from{ opacity:0; transform:scale(.92); }
+    to{ opacity:1; transform:scale(1); }
+}
+
+/* =========================
    LOGIN
 ========================= */
 
@@ -725,11 +810,18 @@ header{
 
 .admin-container{
     padding:24px;
+    max-width:900px;
+    margin:0 auto;
+}
+
+.produtos-container{
+    padding:24px;
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:380px 1fr;
     gap:24px;
     max-width:1200px;
     margin:0 auto;
+    align-items:start;
 }
 
 .novo-produto{
@@ -789,20 +881,130 @@ header{
     box-shadow:0 6px 20px rgba(217,31,38,.25);
 }
 
-.pedidos-admin{
+.pedidos-admin,
+.produtos-admin{
     background:white;
     border-radius:18px;
     padding:24px;
     box-shadow:0 2px 16px rgba(0,0,0,.07);
 }
 
-.pedidos-admin h2{
+.pedidos-admin h2,
+.produtos-admin h2{
     font-size:17px;
     font-weight:700;
     color:#222;
     padding-bottom:12px;
     border-bottom:2px solid #f4f4f4;
     margin-bottom:16px;
+}
+
+.produtos-admin{
+    max-height: 640px;
+    overflow-y: auto;
+}
+
+.produto-admin-card{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:14px 16px;
+    border-radius:12px;
+    background:#fafafa;
+    border:1.5px solid #ebebeb;
+    margin-bottom:10px;
+}
+
+.produto-admin-card.inativo{
+    opacity:.6;
+}
+
+.produto-admin-info{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+}
+
+.produto-admin-info strong{
+    font-size:14px;
+    color:#222;
+}
+
+.produto-admin-info span{
+    font-size:12.5px;
+    color:#777;
+}
+
+.produto-admin-status{
+    display:inline-block;
+    width:fit-content;
+    padding:2px 8px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:700;
+    margin-top:2px;
+}
+
+.status-ativo{
+    background:#e4f7e9;
+    color:#1e8a42;
+}
+
+.status-inativo{
+    background:#fdeaea;
+    color:#c0392b;
+}
+
+.produto-admin-acoes{
+    display:flex;
+    gap:8px;
+    flex-shrink:0;
+}
+
+.produto-admin-acoes button{
+    border:none;
+    border-radius:9px;
+    padding:8px 12px;
+    font-size:12.5px;
+    font-weight:700;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.btn-editar-produto{
+    background:#eef2ff;
+    color:#3949ab;
+}
+
+.btn-editar-produto:hover{
+    background:#dde3fb;
+}
+
+.btn-inativar-produto{
+    background:#fdeaea;
+    color:#c0392b;
+}
+
+.btn-inativar-produto:hover{
+    background:#fbdada;
+}
+
+.btn-reativar-produto{
+    background:#e4f7e9;
+    color:#1e8a42;
+}
+
+.btn-reativar-produto:hover{
+    background:#d3f0da;
+}
+
+#btnCancelarEdicao{
+    background:#777 !important;
+}
+
+#btnCancelarEdicao:hover{
+    background:#5f5f5f !important;
 }
 
 /* =========================
@@ -830,7 +1032,7 @@ header{
         width:100%;
     }
 
-    .admin-container{
+    .produtos-container{
         grid-template-columns:1fr;
     }
 

@@ -15,7 +15,7 @@
 
 </head>
 
-<body onload="carregarPedidosAdmin()">
+<body onload="carregarPedidosAdmin();">
 
     <header class="admin-topo">
 <div class="topo-admin">
@@ -23,6 +23,10 @@
     <h1>Painel Administrativo</h1>
 
     <div class="acoes-admin">
+
+        <button onclick="window.location.href='produtos.html'">
+            Produtos
+        </button>
 
         <button onclick="voltarInicio()">
             Início
@@ -38,46 +42,6 @@
     </header>
 
     <main class="admin-container">
-
-        <section class="novo-produto">
-
-            <h2>Novo Produto</h2>
-
-            <input type="text"
-                id="nomeProduto"
-                placeholder="Nome">
-
-            <input type="text"
-                id="descricaoProduto"
-                placeholder="Descrição">
-
-            <input type="number"
-                id="precoProduto"
-                placeholder="Preço">
-
-            <select id="categoriaProduto">
-
-                <option value="Dogão">
-                    Dogão
-                </option>
-
-                <option value="Xis">
-                    Xis
-                </option>
-
-                <option value="Bebida">
-                    Bebida
-                </option>
-
-            </select>
-
-            <button onclick="cadastrarProduto()">
-
-                Cadastrar Produto
-
-            </button>
-
-        </section>
 
         <section class="pedidos-admin">
 

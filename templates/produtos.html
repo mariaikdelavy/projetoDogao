@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Produtos - Admin</title>
+
+    <link rel="stylesheet"
+        href="/static/css/style.css">
+
+</head>
+
+<body onload="carregarProdutosAdmin();">
+
+    <header class="admin-topo">
+<div class="topo-admin">
+
+    <h1>Gestão de Produtos</h1>
+
+    <div class="acoes-admin">
+
+        <button onclick="window.location.href='admin.html'">
+            Pedidos
+        </button>
+
+        <button onclick="voltarInicio()">
+            Início
+        </button>
+
+        <button onclick="sairAdmin()">
+            Sair
+        </button>
+
+    </div>
+
+</div>
+    </header>
+
+    <main class="produtos-container">
+
+        <section class="novo-produto">
+
+            <h2 id="tituloFormProduto">Novo Produto</h2>
+
+            <input type="hidden" id="idProduto" value="">
+
+            <input type="text"
+                id="nomeProduto"
+                placeholder="Nome">
+
+            <input type="text"
+                id="descricaoProduto"
+                placeholder="Descrição">
+
+            <input type="number"
+                id="precoProduto"
+                placeholder="Preço">
+
+                        <select id="categoriaProduto">
+
+                <option value="Dogão">
+                    Dogão
+                </option>
+
+                <option value="Xis">
+                    Xis
+                </option>
+
+                <option value="Bebida">
+                    Bebida
+                </option>
+
+            </select>
+
+            <label for="imagemProduto" style="display:block;margin-top:10px;">
+                Foto do produto
+            </label>
+
+            <input type="file"
+                id="imagemProduto"
+                accept="image/*"
+                onchange="previewImagemProduto(event)">
+
+            <img id="previewImagemProduto"
+                src=""
+                alt="Preview"
+                style="display:none; max-width:150px; margin-top:8px; border-radius:8px;">
+
+            <button id="btnSalvarProduto" onclick="salvarProduto()">
+
+                Cadastrar Produto
+
+            </button>
+
+            <button id="btnCancelarEdicao"
+                onclick="cancelarEdicaoProduto()"
+                style="display:none; background:#777;">
+
+                Cancelar edição
+
+            </button>
+
+        </section>
+
+        <section class="produtos-admin">
+
+            <h2>Produtos Cadastrados</h2>
+
+            <div id="listaProdutosAdmin"></div>
+
+        </section>
+
+    </main>
+
+    <script src="/static/js/script.js"></script>
+
+</body>
+
+</html>
