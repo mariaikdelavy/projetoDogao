@@ -15,9 +15,11 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // pré-checagem CORS
                 .requestMatchers("/pedidos/**").permitAll() // criar pedido
-                .requestMatchers("/produtos/**").permitAll()
-                .requestMatchers("/admin/**").authenticated() // futuro admin
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/produtos/**").permitAll() // cardápio público
+                .requestMatchers("/produtos/**").hasRole("ADMIN") // criar/editar/inativar só admin
+                .requestMatchers("/admin/**").authenticated()
                 .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults()); 

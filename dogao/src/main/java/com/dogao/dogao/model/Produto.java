@@ -8,7 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.List;
 
 @Entity
@@ -29,6 +28,13 @@ public class Produto {
 
     @NotBlank(message = "Categoria é obrigatória")
     private String categoria;
+
+    @NotNull(message = "Ativo é obrigatório")
+    private Boolean ativo = true;
+
+    // Nome do arquivo de imagem salvo no servidor (ex: "3f2a1b-tenis.jpg")
+    // Não é obrigatório, pois produto pode não ter imagem própria (usa a padrão no front)
+    private String nomeImagem;
 
     @JsonIgnore
     @OneToMany(mappedBy = "produto")
@@ -71,5 +77,21 @@ public class Produto {
 
     public void setCategoria(String categoria) {
         this.categoria = categoria;
+    }
+
+    public Boolean getAtivo() {
+        return ativo;
+    }
+
+    public void setAtivo(Boolean ativo) {
+        this.ativo = ativo;
+    }
+
+    public String getNomeImagem() {
+        return nomeImagem;
+    }
+
+    public void setNomeImagem(String nomeImagem) {
+        this.nomeImagem = nomeImagem;
     }
 }
