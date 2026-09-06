@@ -79,44 +79,26 @@
         </div>
 
         <!-- CATEGORIAS -->
-        <nav class="categorias">
-
-            <button class="ativo"
-
-                onclick="
-                carregarProdutos('Dogão');
-                alterarCategoria(this)
-                ">
-
-                Dogões
-
-            </button>
-
-            <button
-
-                onclick="
-                carregarProdutos('Xis');
-                alterarCategoria(this)
-                ">
-
-                Xis
-
-            </button>
-
-            <button
-
-                onclick="
-                carregarProdutos('Bebida');
-                alterarCategoria(this)
-                ">
-
-                Bebidas
-
-            </button>
+        <nav class="categorias"
+            id="navCategorias">
 
         </nav>
 
     </header>
+
+    <!-- DESTAQUES -->
+    <section class="secao-destaques"
+        id="secaoDestaques"
+        style="display:none;">
+
+        <h2>⭐ Destaques</h2>
+
+        <div class="lista-produtos"
+        id="listaDestaques">
+
+        </div>
+
+    </section>
 
     <!-- PRODUTOS -->
     <main>
@@ -130,12 +112,6 @@
 
     <!-- JS -->
     <script src="/static/js/script.js"></script>
-
-    <script>
-
-        carregarProdutos("Dogões");
-
-    </script>
 
 </body>
 

@@ -83,7 +83,7 @@ function menuShow(){
 }
 
 /* =========================
-   CATEGORIAS
+   CATEGORIAS (menu da tela inicial)
 ========================= */
 
 function alterarCategoria(botaoSelecionado){
@@ -96,6 +96,45 @@ function alterarCategoria(botaoSelecionado){
     });
 
     botaoSelecionado.classList.add("ativo");
+}
+
+// Monta o menu de categorias da tela inicial dinamicamente.
+// Só entram categorias que têm ao menos 1 produto ativo (o backend já
+// filtra isso em /categorias/disponiveis).
+async function carregarCategoriasNav(){
+
+    const nav =
+    document.getElementById("navCategorias");
+
+    if(!nav) return;
+
+    try{
+        const resposta = await fetch(API + "/categorias/disponiveis");
+        const categorias = await resposta.json();
+
+        if(categorias.length === 0){
+            nav.innerHTML = "";
+            const lista = document.getElementById("listaProdutos");
+            if(lista){
+                lista.innerHTML =
+                '<p style="text-align:center;color:#999;padding:30px;">Nenhum produto disponível no momento.</p>';
+            }
+            return;
+        }
+
+        nav.innerHTML = categorias.map((categoria, index) => `
+            <button
+                class="${index === 0 ? "ativo" : ""}"
+                onclick="carregarProdutos(${categoria.id}); alterarCategoria(this)">
+                ${categoria.nome}
+            </button>
+        `).join("");
+
+        carregarProdutos(categorias[0].id);
+
+    } catch(e){
+        nav.innerHTML = "";
+    }
 }
 
 /* =========================
@@ -232,12 +271,17 @@ function removerItem(index){
 
 let ultimaRequisicaoProdutos = 0;
 
-async function carregarProdutos(categoria = "Dogão"){
+// Busca os produtos de uma categoria (por id). O backend já devolve a
+// lista com os produtos em destaque primeiro e o restante do menor
+// para o maior preço.
+async function carregarProdutos(categoriaId){
+
+    if(categoriaId === undefined || categoriaId === null) return;
 
     const idRequisicao = ++ultimaRequisicaoProdutos;
 
     const resposta =
-    await fetch(API + "/produtos");
+    await fetch(`${API}/produtos/categoria/${categoriaId}`);
 
     // Se outra chamada mais recente já foi feita enquanto esperávamos
     // essa resposta, ignoramos o resultado desatualizado
@@ -246,14 +290,36 @@ async function carregarProdutos(categoria = "Dogão"){
     const produtos =
     await resposta.json();
 
-    const filtrados =
-    produtos
-        .filter(p => p.categoria === categoria)
-        .sort((a, b) => a.preco - b.preco);
-
-    renderizarProdutos(filtrados);
+    renderizarProdutos(produtos, "listaProdutos");
 
     atualizarContador();
+}
+
+// Seção de "Destaques" da tela inicial: produtos marcados como destaque,
+// de qualquer categoria. A seção inteira fica escondida se não houver
+// nenhum produto em destaque no momento.
+async function carregarDestaques(){
+
+    const secao =
+    document.getElementById("secaoDestaques");
+
+    if(!secao) return;
+
+    try{
+        const resposta = await fetch(API + "/produtos/destaques");
+        const produtos = await resposta.json();
+
+        if(produtos.length === 0){
+            secao.style.display = "none";
+            return;
+        }
+
+        secao.style.display = "block";
+        renderizarProdutos(produtos, "listaDestaques");
+
+    } catch(e){
+        secao.style.display = "none";
+    }
 }
 
 const imgProdutos = {
@@ -269,16 +335,28 @@ const imgProdutos = {
     "Refrigerante Lata": "../static/assets/refri-lata.jpg"
 };
 
-function renderizarProdutos(produtos){
+function renderizarProdutos(produtos, idContainer = "listaProdutos"){
 
     const lista =
-    document.getElementById("listaProdutos");
+    document.getElementById(idContainer);
 
     if(!lista) return;
+
+    if(produtos.length === 0){
+        lista.innerHTML =
+        '<p style="text-align:center;color:#999;padding:20px;">Nenhum produto por aqui ainda.</p>';
+        return;
+    }
 
     lista.innerHTML = "";
 
     produtos.forEach(produto => {
+
+        const emPromocao =
+        produto.promocao && produto.precoPromocional != null;
+
+        const precoExibido =
+        emPromocao ? produto.precoPromocional : produto.preco;
 
         lista.innerHTML += `
 
@@ -289,12 +367,18 @@ function renderizarProdutos(produtos){
 
             <div class="info-produto">
 
+                <div class="selos-produto">
+                    ${produto.destaque ? '<span class="selo selo-destaque">⭐ Destaque</span>' : ""}
+                    ${emPromocao ? '<span class="selo selo-promocao">🔥 Promoção</span>' : ""}
+                </div>
+
                 <div class="topo-produto">
 
                     <h2>${produto.nome}</h2>
 
-                    <span>
-                        R$ ${formatarPreco(produto.preco)}
+                    <span class="preco-produto">
+                        ${emPromocao ? `<span class="preco-riscado">R$ ${formatarPreco(produto.preco)}</span>` : ""}
+                        R$ ${formatarPreco(precoExibido)}
                     </span>
 
                 </div>
@@ -329,6 +413,11 @@ async function adicionarCarrinho(id){
 
     const produto =
     await resposta.json();
+
+    // Se o produto está em promoção, usa o preço promocional no carrinho
+    if(produto.promocao && produto.precoPromocional != null){
+        produto.preco = produto.precoPromocional;
+    }
 
     const itemExistente =
     carrinho.find(
@@ -686,8 +775,17 @@ async function salvarProduto(){
     const preco =
     parseFloat(document.getElementById("precoProduto").value);
 
-    const categoria =
-    document.getElementById("categoriaProduto").value;
+    const categoriaId =
+    parseInt(document.getElementById("categoriaProduto").value);
+
+    const destaque =
+    document.getElementById("destaqueProduto").checked;
+
+    const promocao =
+    document.getElementById("promocaoProduto").checked;
+
+    const precoPromocional =
+    promocao ? parseFloat(document.getElementById("precoPromocionalProduto").value) : null;
 
     const inputImagem =
     document.getElementById("imagemProduto");
@@ -695,8 +793,13 @@ async function salvarProduto(){
     const arquivoImagem =
     inputImagem.files[0];
 
-    if(!nome || !descricao || isNaN(preco) || preco <= 0){
+    if(!nome || !descricao || isNaN(preco) || preco <= 0 || isNaN(categoriaId)){
         toast("Preencha todos os campos corretamente.", "aviso");
+        return;
+    }
+
+    if(promocao && (isNaN(precoPromocional) || precoPromocional <= 0)){
+        toast("Informe um preço promocional válido.", "aviso");
         return;
     }
 
@@ -712,7 +815,15 @@ async function salvarProduto(){
         const resposta = await fetch(url, {
             method: metodo,
             headers: headersAdmin(),
-            body: JSON.stringify({ nome, descricao, preco, categoria })
+            body: JSON.stringify({
+                nome,
+                descricao,
+                preco,
+                categoriaId,
+                destaque,
+                promocao,
+                precoPromocional
+            })
         });
 
         if(resposta.ok){
@@ -780,7 +891,14 @@ function editarProduto(produto){
     document.getElementById("nomeProduto").value = produto.nome;
     document.getElementById("descricaoProduto").value = produto.descricao;
     document.getElementById("precoProduto").value = produto.preco;
-    document.getElementById("categoriaProduto").value = produto.categoria;
+    document.getElementById("categoriaProduto").value = produto.categoria ? produto.categoria.id : "";
+
+    document.getElementById("destaqueProduto").checked = !!produto.destaque;
+
+    document.getElementById("promocaoProduto").checked = !!produto.promocao;
+    document.getElementById("precoPromocionalProduto").value =
+    produto.precoPromocional != null ? produto.precoPromocional : "";
+    togglePrecoPromocional();
 
     // Limpa o input de arquivo (não dá pra pré-preencher um <input type="file">)
     document.getElementById("imagemProduto").value = "";
@@ -815,6 +933,12 @@ function cancelarEdicaoProduto(){
     document.getElementById("nomeProduto").value = "";
     document.getElementById("descricaoProduto").value = "";
     document.getElementById("precoProduto").value = "";
+    document.getElementById("categoriaProduto").value = "";
+
+    document.getElementById("destaqueProduto").checked = false;
+    document.getElementById("promocaoProduto").checked = false;
+    document.getElementById("precoPromocionalProduto").value = "";
+    togglePrecoPromocional();
 
     document.getElementById("imagemProduto").value = "";
 
@@ -830,6 +954,48 @@ function cancelarEdicaoProduto(){
 
     document.getElementById("btnCancelarEdicao").style.display =
     "none";
+}
+
+// Mostra/esconde o campo de preço promocional dependendo do checkbox "Em promoção"
+function togglePrecoPromocional(){
+
+    const checkbox = document.getElementById("promocaoProduto");
+    const campo = document.getElementById("campoPrecoPromocional");
+
+    if(!checkbox || !campo) return;
+
+    campo.style.display = checkbox.checked ? "block" : "none";
+}
+
+// Popula o <select> de categoria do formulário de produto com as
+// categorias já cadastradas (busca sempre a lista mais atual)
+async function carregarCategoriasSelect(){
+
+    const select =
+    document.getElementById("categoriaProduto");
+
+    if(!select) return;
+
+    try{
+        const resposta = await fetch(API + "/categorias");
+        const categorias = await resposta.json();
+
+        if(categorias.length === 0){
+            select.innerHTML =
+            '<option value="">Cadastre uma categoria primeiro</option>';
+            return;
+        }
+
+        select.innerHTML =
+        '<option value="">Selecione a categoria</option>' +
+        categorias.map(categoria =>
+            `<option value="${categoria.id}">${categoria.nome}</option>`
+        ).join("");
+
+    } catch(e){
+        select.innerHTML =
+        '<option value="">Não foi possível carregar as categorias</option>';
+    }
 }
 
 function previewImagemProduto(event){
@@ -891,10 +1057,14 @@ function renderizarProdutosAdmin(produtos){
 
             <div class="produto-admin-info">
                 <strong>${produto.nome}</strong>
-                <span>${produto.categoria} · R$ ${formatarPreco(produto.preco)}</span>
-                <span class="produto-admin-status ${produto.ativo ? "status-ativo" : "status-inativo"}">
-                    ${produto.ativo ? "Ativo" : "Inativo"}
-                </span>
+                <span>${produto.categoria ? produto.categoria.nome : "Sem categoria"} · R$ ${formatarPreco(produto.preco)}</span>
+                <div class="produto-admin-selos">
+                    <span class="produto-admin-status ${produto.ativo ? "status-ativo" : "status-inativo"}">
+                        ${produto.ativo ? "Ativo" : "Inativo"}
+                    </span>
+                    ${produto.destaque ? '<span class="produto-admin-status status-destaque">⭐ Destaque</span>' : ""}
+                    ${produto.promocao ? '<span class="produto-admin-status status-promocao">🔥 Promoção</span>' : ""}
+                </div>
             </div>
 
             <div class="produto-admin-acoes">
@@ -905,6 +1075,11 @@ function renderizarProdutosAdmin(produtos){
                     Editar
                 </button>
 
+                ${produto.destaque
+                    ? `<button class="btn-destaque-produto ativo" onclick="alternarDestaque(${produto.id}, false)">Remover destaque</button>`
+                    : `<button class="btn-destaque-produto" onclick="alternarDestaque(${produto.id}, true)">Destacar</button>`
+                }
+
                 ${produto.ativo
                     ? `<button class="btn-inativar-produto" onclick="inativarProduto(${produto.id})">Inativar</button>`
                     : `<button class="btn-reativar-produto" onclick="reativarProduto(${produto.id})">Reativar</button>`
@@ -914,6 +1089,33 @@ function renderizarProdutosAdmin(produtos){
 
         </div>
     `).join("");
+}
+
+// Liga/desliga o destaque de um produto direto pela lista do admin,
+// sem precisar abrir o formulário de edição
+async function alternarDestaque(id, novoValor){
+
+    try{
+        const resposta = await fetch(`${API}/produtos/${id}/destaque`, {
+            method: "PATCH",
+            headers: headersAdmin(),
+            body: JSON.stringify({ destaque: novoValor })
+        });
+
+        if(resposta.ok){
+            toast(
+                novoValor ? "Produto marcado como destaque." : "Destaque removido.",
+                "sucesso"
+            );
+            carregarProdutosAdmin();
+        } else if(resposta.status === 401 || resposta.status === 403){
+            toast("Sessão de admin inválida. Faça login novamente.", "erro");
+        } else {
+            toast("Erro ao atualizar destaque.", "erro");
+        }
+    } catch(e){
+        toast("Não foi possível conectar ao servidor.", "erro");
+    }
 }
 
 // Modal de confirmação customizado, no estilo do site.
@@ -1005,6 +1207,195 @@ async function reativarProduto(id){
     }
 }
 
+/* =========================
+   ADMIN - CATEGORIAS
+========================= */
+
+// Carrega todas as categorias para a tela de gestão de categorias do admin
+async function carregarCategoriasAdmin(){
+
+    verificarLogin();
+
+    const lista =
+    document.getElementById("listaCategoriasAdmin");
+
+    if(!lista) return;
+
+    try{
+        const resposta = await fetch(API + "/categorias");
+        const categorias = await resposta.json();
+
+        renderizarCategoriasAdmin(categorias);
+
+    } catch(e){
+        lista.innerHTML =
+        '<p style="color:#999;font-size:14px;text-align:center;padding:20px;">Não foi possível carregar as categorias.</p>';
+    }
+}
+
+function renderizarCategoriasAdmin(categorias){
+
+    const lista =
+    document.getElementById("listaCategoriasAdmin");
+
+    if(!lista) return;
+
+    if(categorias.length === 0){
+        lista.innerHTML =
+        '<p style="color:#999;font-size:14px;text-align:center;padding:20px;">Nenhuma categoria cadastrada ainda.</p>';
+        return;
+    }
+
+    lista.innerHTML = categorias.map(categoria => `
+
+        <div class="produto-admin-card">
+
+            <div class="produto-admin-info">
+                <strong>${categoria.nome}</strong>
+            </div>
+
+            <div class="produto-admin-acoes">
+
+                <button
+                    class="btn-editar-produto"
+                    onclick='editarCategoria(${JSON.stringify(categoria)})'>
+                    Editar
+                </button>
+
+                <button
+                    class="btn-inativar-produto"
+                    onclick="excluirCategoria(${categoria.id}, '${categoria.nome.replace(/'/g, "\\'")}')">
+                    Excluir
+                </button>
+
+            </div>
+
+        </div>
+    `).join("");
+}
+
+// Cria uma nova categoria ou salva a edição de uma já existente
+async function salvarCategoria(){
+
+    const idCategoria =
+    document.getElementById("idCategoria").value;
+
+    const nome =
+    document.getElementById("nomeCategoria").value.trim();
+
+    if(!nome){
+        toast("Digite o nome da categoria.", "aviso");
+        return;
+    }
+
+    const emEdicao = idCategoria !== "";
+
+    const url = emEdicao
+        ? `${API}/categorias/${idCategoria}`
+        : `${API}/categorias`;
+
+    const metodo = emEdicao ? "PUT" : "POST";
+
+    try{
+        const resposta = await fetch(url, {
+            method: metodo,
+            headers: headersAdmin(),
+            body: JSON.stringify({ nome })
+        });
+
+        if(resposta.ok){
+
+            toast(
+                emEdicao
+                    ? `"${nome}" atualizada com sucesso!`
+                    : `"${nome}" cadastrada com sucesso!`,
+                "sucesso",
+                emEdicao ? "Categoria atualizada" : "Categoria adicionada"
+            );
+
+            cancelarEdicaoCategoria();
+            carregarCategoriasAdmin();
+
+        } else if(resposta.status === 401 || resposta.status === 403){
+            toast("Sessão de admin inválida. Faça login novamente.", "erro");
+        } else if(resposta.status === 409){
+            const mensagem = await resposta.text();
+            toast(mensagem || "Já existe uma categoria com esse nome.", "aviso");
+        } else {
+            toast("Erro ao salvar categoria.", "erro");
+        }
+    } catch(e){
+        toast("Não foi possível conectar ao servidor.", "erro");
+    }
+}
+
+// Preenche o formulário com os dados da categoria para edição (renomear)
+function editarCategoria(categoria){
+
+    document.getElementById("idCategoria").value = categoria.id;
+    document.getElementById("nomeCategoria").value = categoria.nome;
+
+    document.getElementById("tituloFormCategoria").innerText =
+    `Editando: ${categoria.nome}`;
+
+    document.getElementById("btnSalvarCategoria").innerText =
+    "Salvar Edição";
+
+    document.getElementById("btnCancelarEdicaoCategoria").style.display =
+    "block";
+
+    document.querySelector(".novo-produto")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+// Limpa o formulário e volta ao modo "nova categoria"
+function cancelarEdicaoCategoria(){
+
+    document.getElementById("idCategoria").value = "";
+    document.getElementById("nomeCategoria").value = "";
+
+    document.getElementById("tituloFormCategoria").innerText =
+    "Nova Categoria";
+
+    document.getElementById("btnSalvarCategoria").innerText =
+    "Cadastrar Categoria";
+
+    document.getElementById("btnCancelarEdicaoCategoria").style.display =
+    "none";
+}
+
+async function excluirCategoria(id, nome){
+
+    const ok = await confirmar(
+        "Excluir categoria",
+        `Tem certeza que deseja excluir "${nome}"? Só é possível excluir categorias sem produtos vinculados.`,
+        "Excluir"
+    );
+
+    if(!ok) return;
+
+    try{
+        const resposta = await fetch(`${API}/categorias/${id}`, {
+            method: "DELETE",
+            headers: headersAdmin()
+        });
+
+        if(resposta.ok){
+            toast("Categoria excluída.", "sucesso");
+            carregarCategoriasAdmin();
+        } else if(resposta.status === 401 || resposta.status === 403){
+            toast("Sessão de admin inválida. Faça login novamente.", "erro");
+        } else if(resposta.status === 409){
+            const mensagem = await resposta.text();
+            toast(mensagem || "Não é possível excluir essa categoria.", "aviso");
+        } else {
+            toast("Erro ao excluir categoria.", "erro");
+        }
+    } catch(e){
+        toast("Não foi possível conectar ao servidor.", "erro");
+    }
+}
+
 async function carregarPedidosAdmin(){
 
     verificarLogin();
@@ -1045,10 +1436,10 @@ document.addEventListener(
 
         if(
             document.getElementById(
-                "listaProdutos"
+                "navCategorias"
             )
         ){
-            carregarProdutos();
+            carregarCategoriasNav();
         }
 
         if(
@@ -1057,6 +1448,22 @@ document.addEventListener(
             )
         ){
             carregarCarrinho();
+        }
+
+        if(
+            document.getElementById(
+                "categoriaProduto"
+            )
+        ){
+            carregarCategoriasSelect();
+        }
+
+        if(
+            document.getElementById(
+                "listaCategoriasAdmin"
+            )
+        ){
+            carregarCategoriasAdmin();
         }
     }
 );

@@ -28,6 +28,10 @@
             Pedidos
         </button>
 
+        <button onclick="window.location.href='categorias.html'">
+            Categorias
+        </button>
+
         <button onclick="voltarInicio()">
             Início
         </button>
@@ -61,21 +65,34 @@
                 id="precoProduto"
                 placeholder="Preço">
 
-                        <select id="categoriaProduto">
+            <select id="categoriaProduto">
 
-                <option value="Dogão">
-                    Dogão
-                </option>
-
-                <option value="Xis">
-                    Xis
-                </option>
-
-                <option value="Bebida">
-                    Bebida
+                <option value="">
+                    Carregando categorias...
                 </option>
 
             </select>
+
+            <label class="campo-checkbox">
+                <input type="checkbox"
+                    id="destaqueProduto">
+                ⭐ Produto em destaque
+            </label>
+
+            <label class="campo-checkbox">
+                <input type="checkbox"
+                    id="promocaoProduto"
+                    onchange="togglePrecoPromocional()">
+                🔥 Produto em promoção
+            </label>
+
+            <div id="campoPrecoPromocional" style="display:none;">
+
+                <input type="number"
+                    id="precoPromocionalProduto"
+                    placeholder="Preço promocional">
+
+            </div>
 
             <label for="imagemProduto" style="display:block;margin-top:10px;">
                 Foto do produto

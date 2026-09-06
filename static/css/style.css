@@ -170,6 +170,21 @@ header{
    PRODUTOS
 ========================= */
 
+.secao-destaques{
+    padding:20px 20px 0;
+}
+
+.secao-destaques h2{
+    font-size:19px;
+    color:#222;
+    margin-bottom:10px;
+    padding-left:5px;
+}
+
+.secao-destaques .lista-produtos{
+    padding:0;
+}
+
 .lista-produtos{
     padding:20px;
     display:flex;
@@ -195,6 +210,39 @@ header{
 
 .info-produto{
     width:100%;
+}
+
+.selos-produto{
+    display:flex;
+    gap:6px;
+    margin-bottom:6px;
+    flex-wrap:wrap;
+}
+
+.selo{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:20px;
+}
+
+.selo-destaque{
+    background:#fff4d6;
+    color:#a6740a;
+}
+
+.selo-promocao{
+    background:#fdeaea;
+    color:#c0392b;
+}
+
+.preco-riscado{
+    text-decoration:line-through;
+    color:#999;
+    font-weight:400;
+    font-size:13px;
+    margin-right:6px;
 }
 
 .topo-produto{
@@ -786,15 +834,12 @@ header{
     cursor:pointer;
     font-size:13px;
     transition:.2s;
-}
-
-.acoes-admin button:first-child{
     background:rgba(255,255,255,.2);
     color:white;
     backdrop-filter:blur(6px);
 }
 
-.acoes-admin button:first-child:hover{
+.acoes-admin button:hover{
     background:rgba(255,255,255,.3);
 }
 
@@ -875,6 +920,34 @@ header{
     margin-top:4px;
 }
 
+.campo-checkbox{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    color:#444;
+    font-weight:600;
+    cursor:pointer;
+    padding:4px 2px;
+}
+
+.campo-checkbox input[type="checkbox"]{
+    width:17px;
+    height:17px;
+    accent-color:#d91f26;
+    cursor:pointer;
+}
+
+#campoPrecoPromocional input{
+    padding:12px 14px;
+    border-radius:11px;
+    border:1.5px solid #ebebeb;
+    font-size:14px;
+    outline:none;
+    background:#fafafa;
+    width:100%;
+}
+
 .novo-produto button:hover{
     background:#c0392b;
     transform:translateY(-1px);
@@ -936,6 +1009,13 @@ header{
     color:#777;
 }
 
+.produto-admin-selos{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:2px;
+}
+
 .produto-admin-status{
     display:inline-block;
     width:fit-content;
@@ -956,10 +1036,22 @@ header{
     color:#c0392b;
 }
 
+.status-destaque{
+    background:#fff4d6;
+    color:#a6740a;
+}
+
+.status-promocao{
+    background:#fde4ea;
+    color:#c0392b;
+}
+
 .produto-admin-acoes{
     display:flex;
     gap:8px;
     flex-shrink:0;
+    flex-wrap:wrap;
+    justify-content:flex-end;
 }
 
 .produto-admin-acoes button{
@@ -979,6 +1071,24 @@ header{
 
 .btn-editar-produto:hover{
     background:#dde3fb;
+}
+
+.btn-destaque-produto{
+    background:#fff4d6;
+    color:#a6740a;
+}
+
+.btn-destaque-produto:hover{
+    background:#ffedb8;
+}
+
+.btn-destaque-produto.ativo{
+    background:#f1f1f1;
+    color:#666;
+}
+
+.btn-destaque-produto.ativo:hover{
+    background:#e4e4e4;
 }
 
 .btn-inativar-produto{
