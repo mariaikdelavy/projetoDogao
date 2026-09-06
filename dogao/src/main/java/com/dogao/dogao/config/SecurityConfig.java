@@ -19,6 +19,8 @@ public class SecurityConfig {
                 .requestMatchers("/pedidos/**").permitAll() // criar pedido
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/produtos/**").permitAll() // cardápio público
                 .requestMatchers("/produtos/**").hasRole("ADMIN") // criar/editar/inativar só admin
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/categorias/**").permitAll() // listar categorias é público
+                .requestMatchers("/categorias/**").hasRole("ADMIN") // criar/editar/excluir categoria só admin
                 .requestMatchers("/admin/**").authenticated()
                 .anyRequest().authenticated()
             )
