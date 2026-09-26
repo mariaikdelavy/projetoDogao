@@ -77,4 +77,4 @@ function irCarrinho() {
     window.location.href = "carrinho.html";
 }
 
-carregarProdutos("Dogão");
+carregarProdutos("Dogões");
