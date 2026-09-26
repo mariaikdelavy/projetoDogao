@@ -16,7 +16,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // pré-checagem CORS
-                .requestMatchers("/pedidos/**").permitAll() // criar pedido
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/pedidos").permitAll() // cliente cria pedido
+                .requestMatchers("/pedidos/**").hasRole("ADMIN") // ver/aceitar/recusar/etc. pedidos é só admin
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/produtos/**").permitAll() // cardápio público
                 .requestMatchers("/produtos/**").hasRole("ADMIN") // criar/editar/inativar só admin
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/categorias/**").permitAll() // listar categorias é público

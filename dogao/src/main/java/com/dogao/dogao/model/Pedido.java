@@ -24,6 +24,13 @@ public class Pedido {
 
     private String status;
 
+    // Tempo estimado de preparo (em minutos), definido apenas no momento em
+    // que o pedido é aceito e passa para o status EM_PREPARO
+    private Integer tempoEstimadoPreparo;
+
+    // Momento em que o pedido foi aceito pela cozinha/admin
+    private LocalDateTime horarioAceite;
+
     @ManyToOne
     private Cliente cliente;
 
@@ -32,7 +39,9 @@ public class Pedido {
 
     public Pedido() {
         this.data = LocalDateTime.now();
-        this.status = "EM_PREPARO";
+        // Todo pedido novo nasce aguardando aceite. Só vira EM_PREPARO
+        // quando o admin aceita e informa o tempo estimado de preparo.
+        this.status = "PENDENTE";
     }
 
     public Long getId() {
@@ -81,6 +90,22 @@ public class Pedido {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Integer getTempoEstimadoPreparo() {
+        return tempoEstimadoPreparo;
+    }
+
+    public void setTempoEstimadoPreparo(Integer tempoEstimadoPreparo) {
+        this.tempoEstimadoPreparo = tempoEstimadoPreparo;
+    }
+
+    public LocalDateTime getHorarioAceite() {
+        return horarioAceite;
+    }
+
+    public void setHorarioAceite(LocalDateTime horarioAceite) {
+        this.horarioAceite = horarioAceite;
     }
 
     public Cliente getCliente() {
