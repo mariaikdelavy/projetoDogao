@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Categorias - Admin</title>
+
+    <link rel="stylesheet"
+        href="/static/css/style.css">
+
+</head>
+
+<body onload="carregarCategoriasAdmin();">
+
+    <header class="admin-topo">
+<div class="topo-admin">
+
+    <h1>Gestão de Categorias</h1>
+
+    <div class="acoes-admin">
+
+        <button onclick="window.location.href='admin.html'">
+            Pedidos
+        </button>
+
+        <button onclick="window.location.href='produtos.html'">
+            Produtos
+        </button>
+
+        <button onclick="voltarInicio()">
+            Início
+        </button>
+
+        <button onclick="sairAdmin()">
+            Sair
+        </button>
+
+    </div>
+
+</div>
+    </header>
+
+    <main class="produtos-container">
+
+        <section class="novo-produto">
+
+            <h2 id="tituloFormCategoria">Nova Categoria</h2>
+
+            <input type="hidden" id="idCategoria" value="">
+
+            <input type="text"
+                id="nomeCategoria"
+                placeholder="Nome da categoria (ex: Sobremesa)">
+
+            <button id="btnSalvarCategoria" onclick="salvarCategoria()">
+
+                Cadastrar Categoria
+
+            </button>
+
+            <button id="btnCancelarEdicaoCategoria"
+                onclick="cancelarEdicaoCategoria()"
+                style="display:none; background:#777;">
+
+                Cancelar edição
+
+            </button>
+
+        </section>
+
+        <section class="produtos-admin">
+
+            <h2>Categorias Cadastradas</h2>
+
+            <div id="listaCategoriasAdmin"></div>
+
+        </section>
+
+    </main>
+
+    <script src="/static/js/script.js"></script>
+
+</body>
+
+</html>
