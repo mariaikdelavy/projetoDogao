@@ -217,6 +217,8 @@ function mascaraTelefone(input) {
     }
 }
 
+// Mostra os campos de endereço só quando o tipo de entrega é DELIVERY.
+// Na retirada o endereço não é pedido (nem enviado).
 function toggleEndereco(select){
 
     const campo =
@@ -232,6 +234,139 @@ function toggleEndereco(select){
 
         campo.classList.remove("visivel");
     }
+}
+
+/* =========================
+   ENDEREÇO / CEP (ViaCEP)
+========================= */
+
+// Último CEP já consultado (evita buscar de novo o mesmo CEP
+// e descarta respostas atrasadas de um CEP que o cliente já trocou)
+let cepConsultado = "";
+
+function setStatusCep(texto, tipo){
+
+    const el = document.getElementById("statusCep");
+
+    if(!el) return;
+
+    el.textContent = texto;
+    el.className = "cep-status" + (tipo ? " " + tipo : "");
+}
+
+function mascaraCep(input){
+
+    let v = input.value.replace(/\D/g, "").slice(0, 8);
+
+    if(v.length > 5){
+        v = v.slice(0, 5) + "-" + v.slice(5);
+    }
+
+    input.value = v;
+
+    const digitos = v.replace(/\D/g, "");
+
+    if(digitos.length === 8){
+        buscarCep();
+    } else {
+        // CEP incompleto ou apagado: libera nova busca e limpa a mensagem
+        cepConsultado = "";
+        setStatusCep("", "");
+    }
+}
+
+// Preenche rua, bairro, cidade e UF a partir do CEP. Os campos continuam
+// editáveis: se o CEP não existir, se a internet falhar ou se o CEP for
+// "geral" da cidade (sem rua), o cliente preenche na mão.
+async function buscarCep(){
+
+    const digitos =
+    document.getElementById("cep").value.replace(/\D/g, "");
+
+    if(digitos.length !== 8 || digitos === cepConsultado) return;
+
+    cepConsultado = digitos;
+
+    setStatusCep("Buscando endereço...", "info");
+
+    const controle = new AbortController();
+    const limite = setTimeout(() => controle.abort(), 6000);
+
+    try{
+        const resposta = await fetch(
+            `https://viacep.com.br/ws/${digitos}/json/`,
+            { signal: controle.signal }
+        );
+
+        if(!resposta.ok) throw new Error("HTTP " + resposta.status);
+
+        const dados = await resposta.json();
+
+        // O cliente trocou o CEP enquanto a busca rodava: ignora esta resposta
+        if(cepConsultado !== digitos) return;
+
+        if(dados.erro){
+            setStatusCep("CEP não encontrado. Confira o número ou preencha o endereço abaixo.", "erro");
+            document.getElementById("rua").focus();
+            return;
+        }
+
+        document.getElementById("rua").value    = dados.logradouro || "";
+        document.getElementById("bairro").value = dados.bairro     || "";
+        document.getElementById("cidade").value = dados.localidade || "";
+        document.getElementById("uf").value     = dados.uf         || "";
+
+        setStatusCep("Endereço encontrado. Informe o número.", "ok");
+
+        // Se veio rua, o próximo passo do cliente é o número; senão, a rua
+        document.getElementById(dados.logradouro ? "numero" : "rua").focus();
+
+    } catch(e){
+
+        if(cepConsultado !== digitos) return;
+
+        // Permite tentar de novo quando o cliente editar o CEP
+        cepConsultado = "";
+
+        setStatusCep("Não consegui buscar o CEP agora. Preencha o endereço manualmente.", "erro");
+
+    } finally {
+        clearTimeout(limite);
+    }
+}
+
+function valorCampo(id){
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+}
+
+// Devolve a mensagem do primeiro problema encontrado, ou null se está tudo certo
+function validarEndereco(){
+
+    if(valorCampo("cep").replace(/\D/g, "").length !== 8)
+        return "Informe o CEP com 8 dígitos.";
+
+    if(!valorCampo("rua"))    return "Informe a rua.";
+    if(!valorCampo("numero")) return "Informe o número (ou S/N).";
+    if(!valorCampo("bairro")) return "Informe o bairro.";
+    if(!valorCampo("cidade")) return "Informe a cidade.";
+    if(valorCampo("uf").length !== 2) return "Informe a UF (2 letras).";
+
+    return null;
+}
+
+// Junta os campos num texto único (é assim que o back-end guarda o endereço)
+function montarEndereco(){
+
+    const cep = valorCampo("cep").replace(/\D/g, "");
+
+    let linha = `${valorCampo("rua")}, ${valorCampo("numero")}`;
+
+    if(valorCampo("complemento")){
+        linha += ` - ${valorCampo("complemento")}`;
+    }
+
+    return `${linha} - ${valorCampo("bairro")}, ${valorCampo("cidade")}/${valorCampo("uf")} - CEP ${cep.slice(0, 5)}-${cep.slice(5)}`;
 }
 
 function alterarQuantidade(index, delta){
@@ -678,8 +813,7 @@ async function finalizarPedido() {
     const entrega =
     document.getElementById("tipoEntrega").value;
 
-    const endereco =
-    document.getElementById("endereco").value.trim();
+    const ehDelivery = entrega === "DELIVERY";
 
     if (!nome) {
         toast("Informe seu nome completo.", "aviso");
@@ -691,12 +825,19 @@ async function finalizarPedido() {
         return;
     }
 
-    if (
-        entrega === "DELIVERY" &&
-        !endereco
-    ) {
-        toast("Informe o endereço de entrega.", "aviso");
-        return;
+    // Endereço só é obrigatório no delivery; na retirada nem é lido
+    let endereco = "";
+
+    if (ehDelivery) {
+
+        const erroEndereco = validarEndereco();
+
+        if (erroEndereco) {
+            toast(erroEndereco, "aviso");
+            return;
+        }
+
+        endereco = montarEndereco();
     }
 
     if(carrinho.length === 0){
@@ -716,7 +857,7 @@ async function finalizarPedido() {
         },
         formaPagamento: pagamento,
         tipoEntrega: entrega,
-        endereco: entrega === "DELIVERY" ? endereco : null,
+        endereco: ehDelivery ? endereco : null,
         itens: carrinho.map(item => ({
             produto: { id: item.produto.id },
             quantidade: item.quantidade,
@@ -726,6 +867,9 @@ async function finalizarPedido() {
 
     if(btnFinalizar) btnFinalizar.disabled = true;
 
+    // Número do pedido no dia, devolvido pelo back-end
+    let numeroPedido = null;
+
     try{
         const resposta = await fetch(API + "/pedidos", {
             method: "POST",
@@ -734,9 +878,18 @@ async function finalizarPedido() {
         });
 
         if(!resposta.ok){
-            toast("Não foi possível registrar seu pedido. Tente novamente.", "erro");
+            // 400 traz o motivo em texto (ex.: endereço obrigatório no delivery)
+            const motivo = resposta.status === 400
+                ? (await resposta.text()).trim()
+                : "";
+
+            toast(motivo || "Não foi possível registrar seu pedido. Tente novamente.", "erro");
             return;
         }
+
+        const pedidoCriado = await resposta.json();
+        numeroPedido = pedidoCriado.numeroPedido ?? pedidoCriado.id;
+
     } catch(e){
         toast("Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.", "erro");
         return;
@@ -744,8 +897,11 @@ async function finalizarPedido() {
         if(btnFinalizar) btnFinalizar.disabled = false;
     }
 
+    // Emoji escrito como código Unicode para não depender da codificação do arquivo (🛒)
+    const EMOJI_CARRINHO = "\uD83D\uDED2";
+
     let mensagem =
-    "*Novo Pedido* 🛒\n\n";
+    `*Novo Pedido #${numeroPedido}* ${EMOJI_CARRINHO}\n\n`;
 
     mensagem +=
     `*Cliente:* ${nome}\n`;
@@ -783,7 +939,7 @@ async function finalizarPedido() {
     `\n*Total: R$ ${formatarPreco(total)}*`;
 
     window.open(
-    `https://wa.me/5549998290681?text=${encodeURIComponent(mensagem)}`,
+    `https://api.whatsapp.com/send?phone=5549998290681&text=${encodeURIComponent(mensagem)}`,
     "_blank"
 );
 
@@ -797,7 +953,7 @@ async function finalizarPedido() {
     carregarCarrinho();
     atualizarContador();
 
-    toast("Pedido enviado! Aguarde a confirmação da cozinha.", "sucesso");
+    toast(`Pedido #${numeroPedido} enviado! Aguarde a confirmação da cozinha.`, "sucesso");
 }
 
 /* =========================
@@ -1534,6 +1690,7 @@ const STATUS_PEDIDO = {
     CANCELADO:  { label: "Cancelado",         classe: "status-pedido-recusado" }
 };
 
+// Dentro de cada dia só a hora importa (o dia já está no título da seção)
 function formatarDataPedido(iso){
 
     if(!iso) return "";
@@ -1542,12 +1699,130 @@ function formatarDataPedido(iso){
 
     if(isNaN(data.getTime())) return "";
 
-    return data.toLocaleString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
+    return data.toLocaleTimeString("pt-BR", {
         hour: "2-digit",
         minute: "2-digit"
     });
+}
+
+/* ---- Agrupamento da tela de pedidos: por dia e, dentro do dia, por situação ---- */
+
+// Cada pedido cai em exatamente um grupo. Status desconhecido vai para
+// "Em andamento" para nunca ficar escondido entre os finalizados.
+const GRUPOS_PEDIDO = [
+    { chave: "espera",      titulo: "Em espera",    status: ["PENDENTE"],                          maisAntigoPrimeiro: true  },
+    { chave: "andamento",   titulo: "Em andamento", status: ["EM_PREPARO", "PRONTO"],              maisAntigoPrimeiro: true  },
+    { chave: "finalizados", titulo: "Finalizados",  status: ["ENTREGUE", "RECUSADO", "CANCELADO"], maisAntigoPrimeiro: false }
+];
+
+function grupoDoPedido(p){
+
+    const grupo = GRUPOS_PEDIDO.find(g => g.status.includes(p.status));
+
+    return grupo ? grupo.chave : "andamento";
+}
+
+// "2026-10-17T14:03:22" -> "2026-10-17" (o texto já vem na data local do servidor)
+function chaveDiaPedido(p){
+    return p.data ? String(p.data).slice(0, 10) : "";
+}
+
+function formatarDiaChave(chave){
+
+    if(!chave) return "Sem data";
+
+    const [ano, mes, dia] = chave.split("-");
+
+    return `${dia}/${mes}/${ano}`;
+}
+
+function chaveDiaHoje(){
+    return chaveDeData(new Date());
+}
+
+/* ---- Estado da tela de pedidos: dia escolhido + aba escolhida ---- */
+
+let pedidosCache = [];        // todos os pedidos vindos do back-end
+let abaPedidos   = "espera";  // espera | andamento | finalizados
+let diaPedidos   = null;      // "YYYY-MM-DD" (começa em hoje)
+
+function chaveDeData(d){
+
+    const mes = String(d.getMonth() + 1).padStart(2, "0");
+    const dia = String(d.getDate()).padStart(2, "0");
+
+    return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
+// Desenha título, contadores das abas e a lista da aba selecionada
+function renderPedidosAdmin(){
+
+    const lista = document.getElementById("listaPedidos");
+
+    if(!lista) return;
+
+    if(!diaPedidos) diaPedidos = chaveDiaHoje();
+
+    const titulo = document.getElementById("tituloPedidos");
+    if(titulo) titulo.textContent = `Pedidos (${formatarDiaChave(diaPedidos)})`;
+
+    const filtro = document.getElementById("filtroDia");
+    if(filtro) filtro.value = diaPedidos;
+
+    const doDia = pedidosCache.filter(p => chaveDiaPedido(p) === diaPedidos);
+
+    // Contadores e destaque da aba selecionada
+    GRUPOS_PEDIDO.forEach(g => {
+
+        const qtd = doDia.filter(p => grupoDoPedido(p) === g.chave).length;
+
+        const contador = document.getElementById(`contador-${g.chave}`);
+        if(contador) contador.textContent = qtd;
+
+        const aba = document.getElementById(`aba-${g.chave}`);
+        if(aba){
+            aba.classList.toggle("ativa", g.chave === abaPedidos);
+            aba.setAttribute("aria-selected", g.chave === abaPedidos);
+        }
+    });
+
+    // Lista só da aba selecionada
+    const grupo = GRUPOS_PEDIDO.find(g => g.chave === abaPedidos);
+
+    const pedidosAba = doDia
+        .filter(p => grupoDoPedido(p) === grupo.chave)
+        .sort((a, b) => grupo.maisAntigoPrimeiro ? a.id - b.id : b.id - a.id);
+
+    lista.innerHTML = pedidosAba.length
+        ? pedidosAba.map(renderPedidoCard).join("")
+        : `<p class="pedidos-vazio">Nenhum pedido ${grupo.titulo.toLowerCase()} neste dia.</p>`;
+}
+
+function selecionarAbaPedidos(chave){
+    abaPedidos = chave;
+    renderPedidosAdmin();
+}
+
+function selecionarDiaPedidos(valor){
+
+    if(!valor) return;
+
+    diaPedidos = valor;
+    renderPedidosAdmin();
+}
+
+// delta = -1 (dia anterior) ou +1 (dia seguinte)
+function mudarDiaPedidos(delta){
+
+    const [ano, mes, dia] = (diaPedidos || chaveDiaHoje()).split("-").map(Number);
+
+    diaPedidos = chaveDeData(new Date(ano, mes - 1, dia + delta));
+    renderPedidosAdmin();
+}
+
+function irParaHojePedidos(){
+    diaPedidos = chaveDiaHoje();
+    renderPedidosAdmin();
 }
 
 // Monta os botões/campos de ação de acordo com o status atual do pedido
@@ -1612,7 +1887,7 @@ function renderPedidoCard(p){
         <div class="pedido-card">
 
             <div class="pedido-topo">
-                <strong>#${p.id} — ${p.cliente ? p.cliente.nome : "Cliente"}</strong>
+                <strong>#${p.numeroPedido ?? p.id} — ${p.cliente ? p.cliente.nome : "Cliente"}</strong>
                 <span class="pedido-status-badge ${statusInfo.classe}">${statusInfo.label}</span>
             </div>
 
@@ -1659,28 +1934,9 @@ async function carregarPedidosAdmin(){
             return;
         }
 
-        const pedidos = await resposta.json();
+        pedidosCache = await resposta.json();
 
-        if(pedidos.length === 0){
-            lista.innerHTML =
-            '<p style="color:#999;font-size:14px;text-align:center;padding:20px;">Nenhum pedido ainda.</p>';
-            return;
-        }
-
-        // Pendentes primeiro, depois em preparo, prontos, e por fim os já
-        // finalizados. Dentro de cada grupo, o mais recente primeiro.
-        const ordemStatus = {
-            PENDENTE: 0, EM_PREPARO: 1, PRONTO: 2, ENTREGUE: 3, RECUSADO: 4, CANCELADO: 4
-        };
-
-        const pedidosOrdenados = [...pedidos].sort((a, b) => {
-            const ordemA = ordemStatus[a.status] ?? 5;
-            const ordemB = ordemStatus[b.status] ?? 5;
-            if(ordemA !== ordemB) return ordemA - ordemB;
-            return b.id - a.id;
-        });
-
-        lista.innerHTML = pedidosOrdenados.map(renderPedidoCard).join("");
+        renderPedidosAdmin();
 
     } catch(e){
         lista.innerHTML =
@@ -1820,6 +2076,14 @@ document.addEventListener(
     () => {
 
         atualizarContador();
+
+        // Navegador pode restaurar "Delivery" ao recarregar a página:
+        // sincroniza a visibilidade do endereço com o tipo selecionado
+        const selectEntrega = document.getElementById("tipoEntrega");
+
+        if(selectEntrega){
+            toggleEndereco(selectEntrega);
+        }
 
         if(
             document.getElementById(

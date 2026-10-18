@@ -49,9 +49,47 @@
 
         <section class="pedidos-admin">
 
-            <h2>Pedidos</h2>
+            <div class="pedidos-cabecalho">
 
-            <div id="listaPedidos"></div>
+                <div class="pedidos-titulo-area">
+
+                    <h2 id="tituloPedidos">Pedidos</h2>
+
+                    <div class="pedidos-dia-nav">
+                        <button type="button" onclick="mudarDiaPedidos(-1)" title="Dia anterior">‹</button>
+                        <input type="date" id="filtroDia"
+                            onchange="selecionarDiaPedidos(this.value)">
+                        <button type="button" onclick="mudarDiaPedidos(1)" title="Próximo dia">›</button>
+                        <button type="button" class="btn-hoje" onclick="irParaHojePedidos()">Hoje</button>
+                    </div>
+
+                </div>
+
+                <div class="abas-pedidos" role="tablist">
+
+                    <button type="button" role="tab" id="aba-espera"
+                        class="aba-pedido ativa"
+                        onclick="selecionarAbaPedidos('espera')">
+                        Em espera <span class="aba-contador" id="contador-espera">0</span>
+                    </button>
+
+                    <button type="button" role="tab" id="aba-andamento"
+                        class="aba-pedido"
+                        onclick="selecionarAbaPedidos('andamento')">
+                        Em andamento <span class="aba-contador" id="contador-andamento">0</span>
+                    </button>
+
+                    <button type="button" role="tab" id="aba-finalizados"
+                        class="aba-pedido"
+                        onclick="selecionarAbaPedidos('finalizados')">
+                        Finalizados <span class="aba-contador" id="contador-finalizados">0</span>
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div id="listaPedidos" class="caixa-pedidos"></div>
 
         </section>
 
