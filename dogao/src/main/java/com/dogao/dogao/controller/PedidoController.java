@@ -9,10 +9,12 @@ import com.dogao.dogao.repository.ClienteRepository;
 import com.dogao.dogao.repository.ItemPedidoRepository;
 import com.dogao.dogao.repository.PedidoRepository;
 import com.dogao.dogao.repository.ProdutoRepository;
+import com.dogao.dogao.service.NumeroPedidoService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -37,7 +39,27 @@ public class PedidoController {
     @Autowired
     private ItemPedidoRepository itemPedidoRepository;
 
+    @Autowired
+    private NumeroPedidoService numeroPedidoService;
+
+    // Emojis escritos como código Unicode (barra + u + 4 dígitos) de propósito:
+    // assim não dependem da codificação do arquivo/IDE e nunca viram "???" ou
+    // caracteres estranhos no WhatsApp. Também evitamos emojis compostos
+    // (ex.: o "cozinheiro"), que aparecem quebrados em aparelhos antigos.
+    private static final String EMOJI_ACENO    = "\uD83D\uDC4B"; // 👋
+    private static final String EMOJI_PANELA   = "\uD83C\uDF73"; // 🍳
+    private static final String EMOJI_OK       = "\u2705";         // ✅
+    private static final String EMOJI_LOCAL    = "\uD83D\uDCCD"; // 📍
+
+    // Número que aparece para o cliente: o do dia (#1, #2...). Pedidos antigos,
+    // criados antes dessa regra, não têm número do dia e usam o id.
+    private String numeroExibicao(Pedido pedido) {
+        return String.valueOf(pedido.getNumeroPedido() != null ? pedido.getNumeroPedido() : pedido.getId());
+    }
+
     // Criar pedido
+    // @Transactional: o número do dia só é "gasto" se o pedido for realmente salvo.
+    @Transactional
     @PostMapping
     public ResponseEntity<?> criarPedido(@RequestBody Pedido pedido) {
 
@@ -46,12 +68,32 @@ public class PedidoController {
             return ResponseEntity.badRequest().body("Informe os dados do cliente.");
         }
 
+        if (pedido.getCliente().getTelefone() == null || pedido.getCliente().getTelefone().isBlank()) {
+            return ResponseEntity.badRequest().body("Informe o telefone do cliente.");
+        }
+
+        // Tipo de entrega: o endereço é obrigatório só para DELIVERY.
+        // Na retirada o endereço é descartado.
+        String tipoEntrega = pedido.getTipoEntrega() == null ? "" : pedido.getTipoEntrega().trim().toUpperCase();
+
+        if (!tipoEntrega.equals("DELIVERY") && !tipoEntrega.equals("RETIRAR")) {
+            return ResponseEntity.badRequest().body("Tipo de entrega inválido. Use DELIVERY ou RETIRAR.");
+        }
+
+        pedido.setTipoEntrega(tipoEntrega);
+
+        if (tipoEntrega.equals("DELIVERY")) {
+            if (pedido.getEndereco() == null || pedido.getEndereco().isBlank()) {
+                return ResponseEntity.badRequest().body("Para delivery é obrigatório informar o endereço de entrega.");
+            }
+            pedido.setEndereco(pedido.getEndereco().trim());
+        } else {
+            pedido.setEndereco(null);
+        }
+
         if (pedido.getItens() == null || pedido.getItens().isEmpty()) {
             return ResponseEntity.badRequest().body("O pedido precisa ter ao menos um item.");
         }
-
-        Cliente clienteSalvo = clienteRepository.save(pedido.getCliente());
-        pedido.setCliente(clienteSalvo);
 
         double total = 0.0;
 
@@ -71,6 +113,14 @@ public class PedidoController {
         }
 
         pedido.setTotal(total);
+
+        Cliente clienteSalvo = clienteRepository.save(pedido.getCliente());
+        pedido.setCliente(clienteSalvo);
+
+        // Numeração do dia: #1 no primeiro pedido do dia, soma a cada pedido
+        // e recomeça em #1 quando o dia muda (controle feito no banco).
+        pedido.setDataPedido(pedido.getData().toLocalDate());
+        pedido.setNumeroPedido(numeroPedidoService.proximoNumero(pedido.getDataPedido()));
 
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
@@ -200,14 +250,14 @@ public class PedidoController {
     }
     
     // mensagem pedido whatsapp
-    @GetMapping("/{id}/whatsapp")
+    @GetMapping(value = "/{id}/whatsapp", produces = "text/plain;charset=UTF-8")
     public String gerarMensagemWhatsApp(@PathVariable Long id) {
 
         Pedido pedido = pedidoRepository.findById(id).orElseThrow();
 
         StringBuilder msg = new StringBuilder();
 
-        msg.append("*NOVO PEDIDO* \n\n");
+        msg.append("*NOVO PEDIDO #").append(numeroExibicao(pedido)).append("*\n\n");
 
         msg.append("Cliente: ").append(pedido.getCliente().getNome()).append("\n");
         msg.append("Telefone: ").append(pedido.getCliente().getTelefone()).append("\n\n");
@@ -233,7 +283,7 @@ public class PedidoController {
         msg.append("\nEntrega: ").append(pedido.getTipoEntrega());
 
         if ("DELIVERY".equals(pedido.getTipoEntrega())) {
-            msg.append("\n📍 Endereço: ").append(pedido.getEndereco());
+            msg.append("\n").append(EMOJI_LOCAL).append(" Endereço: ").append(pedido.getEndereco());
         }
 
         return msg.toString();
@@ -249,7 +299,7 @@ public class PedidoController {
 
         String telefone = "5549998290681";
 
-        String url = "https://wa.me/" + telefone + "?text=" + 
+        String url = "https://api.whatsapp.com/send?phone=" + telefone + "&text=" + 
                      java.net.URLEncoder.encode(mensagem, java.nio.charset.StandardCharsets.UTF_8);
 
         return url;
@@ -275,8 +325,8 @@ public class PedidoController {
     private String gerarMensagemConfirmacao(Pedido pedido) {
         StringBuilder msg = new StringBuilder();
 
-        msg.append("Olá, ").append(pedido.getCliente().getNome()).append("! 👋\n\n");
-        msg.append("Seu pedido *#").append(pedido.getId()).append("* foi confirmado e já está em preparo! 🧑‍🍳\n");
+        msg.append("Olá, ").append(pedido.getCliente().getNome()).append("! ").append(EMOJI_ACENO).append("\n\n");
+        msg.append("Seu pedido *#").append(numeroExibicao(pedido)).append("* foi confirmado e já está em preparo! ").append(EMOJI_PANELA).append("\n");
         msg.append("Tempo estimado: *").append(pedido.getTempoEstimadoPreparo()).append(" min*.\n\n");
         msg.append("Qualquer coisa é só chamar por aqui. Obrigado pela preferência!");
 
@@ -287,8 +337,8 @@ public class PedidoController {
     private String gerarMensagemPedidoPronto(Pedido pedido) {
         StringBuilder msg = new StringBuilder();
 
-        msg.append("Olá, ").append(pedido.getCliente().getNome()).append("! 👋\n\n");
-        msg.append("Seu pedido *#").append(pedido.getId()).append("* está pronto! ✅\n");
+        msg.append("Olá, ").append(pedido.getCliente().getNome()).append("! ").append(EMOJI_ACENO).append("\n\n");
+        msg.append("Seu pedido *#").append(numeroExibicao(pedido)).append("* está pronto! ").append(EMOJI_OK).append("\n");
 
         if ("DELIVERY".equals(pedido.getTipoEntrega())) {
             msg.append("Já estamos saindo para a entrega.");
@@ -301,7 +351,7 @@ public class PedidoController {
 
     // Monta um link wa.me genérico para um número + mensagem já prontos
     private String gerarLinkWhatsApp(String numero, String mensagem) {
-        return "https://wa.me/" + numero + "?text=" +
+        return "https://api.whatsapp.com/send?phone=" + numero + "&text=" +
                 java.net.URLEncoder.encode(mensagem, java.nio.charset.StandardCharsets.UTF_8);
     }
 }
